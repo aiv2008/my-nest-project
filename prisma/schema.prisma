@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["omitApi"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id             Int       @id @default(autoincrement())
+  email          String    @unique
+  name           String
+  phone          String    @unique
+  password       String
+  realName       String
+  birthday       Int?      @default(0)
+  idCard         String?
+  mark           String?
+  partnerId      Int?
+  addIp          String?
+  addres         String?
+  adminid        Int       @default(0)
+  avatar         String?
+  brokeragePrice Decimal?
+  createdAt      DateTime  @default(now())
+  endTime        DateTime?
+  gradeId        String?
+  groupId        Int?
+  integral       Decimal?
+  isDel          Boolean   @default(false)
+  isPromoter     Boolean   @default(false)
+  lastIp         String?
+  level          Int       @default(0)
+  loginType      String?
+  nickname       String
+  nowMoney       Decimal?
+  payCount       Int       @default(0)
+  signNum        Int       @default(0)
+  spreadCount    Int       @default(0)
+  spreadTime     DateTime?
+  spreadUid      BigInt    @default(0)
+  startTime      DateTime?
+  status         Boolean   @default(true)
+  updateAt       DateTime  @updatedAt
+  userType       String?
+  wxProfile      Json?
+  salt           String
+}
