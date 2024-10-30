@@ -1,6 +1,6 @@
 import { Body, Controller , Get, Param, Post, Query, ParseIntPipe, Res, HttpStatus, UseInterceptors} from '@nestjs/common';
 import { UserService } from './user.service';
-import {  Prisma, User } from '@prisma/client';
+import {  Prisma } from '@prisma/client';
 import { TransformInterceptor } from 'src/interceptor/transform.interceptor'; 
 import { ApiResult } from 'src/common/result';
 
@@ -12,13 +12,21 @@ export class UserController  {
     @UseInterceptors(TransformInterceptor)
     @Post('findfilter')
     async findMany(@Body() param: Prisma.UserWhereInput) : Promise<any | undefined>{
-        return ApiResult.success(await  this.userService.findFilter(param), 'query filter successfully');
+        return await this.userService.findFilter(param).then(async(o)=>{
+            return ApiResult.success(o,'query filter successfully' );
+        }).catch(async(e)=>{
+            return ApiResult.fail(501, 'query filter failed'+e);
+        });
     }
 
     @Post('create')
     @UseInterceptors(TransformInterceptor)
     async create(@Body() param: Prisma.UserCreateInput) {
-        return ApiResult.success(await  this.userService.create(param), 'created successfully');
+        return await this.userService.create(param).then(async(o)=>{
+            return ApiResult.success(o, 'created successfully');
+        }).catch(async(e)=>{
+            return ApiResult.fail(501, 'created failed'+e);
+        });
     }
 
     @Get('findbyid/:id')
@@ -37,27 +45,24 @@ export class UserController  {
     @Get('findbyemail')
     @UseInterceptors(TransformInterceptor)
     async findUniqueByEmail(@Query() query: any){
-        // return ApiResult.success( await this.userService.findUniqueByEmail(query.email), 'query by email sucessfully') ;
-        try{
-            return ApiResult.success(await this.userService.findUniqueByEmail(query.email), 'query sucessfully');
-        }catch(e){
+        return await this.userService.findUniqueByEmail(query.email).then(async(o)=>{
+            return ApiResult.success(o, 'success');
+        }).catch(async(e)=>{
             console.log('异常:'+e);
-            return ApiResult.fail(500, 'query failed');
-        }
-        // const data = await this.userService.findUniqueByEmail(query.email).catch(async(e)=>{
-        //     // return ApiResult.fail(HttpStatus.BAD_REQUEST, 'query failed');
-        //     console.log('异常:'+e);
-        //     return ApiResult.fail(500, 'query failed');
-        // });
-        // console.log("data: ===="+data);
-        // return ApiResult.success(data, 'query sucessfully');
+            return ApiResult.fail(501, 'query failed');
+        })
     }
 
     
     @Get('findbyphone')
     @UseInterceptors(TransformInterceptor)
     async findUniqueByPhone(@Query() query: any ){
-        return ApiResult.success(await this.userService.findUniqueByPhone(query.phone), 'query by phone sucessfully');
+        return await this.userService.findUniqueByPhone(query.phone).then(async(o)=>{
+            return ApiResult.success(o, 'success');
+        }).catch(async(e)=>{
+            console.log('异常:'+e);
+            return ApiResult.fail(501, 'query failed');
+        })
     }
 
 }

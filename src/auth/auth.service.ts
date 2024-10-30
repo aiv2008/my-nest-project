@@ -38,11 +38,13 @@ export class AuthService {
             nickname: accountName,
             email: email
         }
-        await this.userService.create(param).catch(async(e)=>{
-            return ApiResult.fail(500, 'created failed: '+e);
-        }).then(async(o)=>{
-            return ApiResult.success(o, 'created successfully');
-        });
+        return await this.userService.create(param);
+
+        // await this.userService.create(param).catch(async(e)=>{
+        //     return ApiResult.fail(500, 'created failed: '+e);
+        // }).then(async(o)=>{
+        //     return ApiResult.success(o, 'created successfully');
+        // });
         
     }
 }
