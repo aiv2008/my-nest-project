@@ -8,9 +8,19 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthService } from './auth/auth.service';
 import { AuthController } from './auth/auth.controller';
 import { AuthModule } from './auth/auth.module';
+import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
+import { jwtConstants } from './config/constants';
+
 
 @Module({
-  imports: [UserModule, PrismaModule, AuthModule],
+  imports: [UserModule, PrismaModule, AuthModule,
+    PassportModule.register({defaultStrategy: 'jwt'}),
+    JwtModule.register({
+        secret: jwtConstants.secret,
+        signOptions: {expiresIn: '8h'}, //token过期
+    }),
+  ],
   controllers: [AppController, UserController, AuthController],
   providers: [AppService, UserService, AuthService],
 })

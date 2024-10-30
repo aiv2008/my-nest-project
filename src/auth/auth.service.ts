@@ -1,15 +1,74 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { RegisterDto } from './dto/register.dto';
 import { ApiResult } from 'src/common/result';
 import { UserService } from 'src/user/user.service';
 import { makeSalt,encryptPassword } from 'src/utils/cryptogram';
 import { Prisma } from '@prisma/client';
-
+// import { JwtStrategy } from './jwt.strategy';
+import {JwtService} from '@nestjs/jwt'
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
 
-    constructor(private readonly userService: UserService){}
+    constructor(private readonly userService: UserService, private readonly jwtService: JwtService,private prisma : PrismaService){}
+
+    async validateUser(username: string, password: string): Promise<any|null>{
+        console.log('Jwt验证 - Step 2：校验用户信息');
+        // const user = await this.userService.findUniqueByPhone(username);
+        return await this.userService.findUniqueByPhone(username,false).then(async(user)=>{
+            console.log(`----序列化user：${JSON.stringify(user)}----`);
+            console.log(`${user != null}`);
+            if(user != null){
+                const salt = user.salt;
+                const userPwd = user.password;
+                console.log(`----密码等于${userPwd}----`);
+                //通过密码盐加密传参，再和数据库的比较，判断是否相等
+                const hashPwd = encryptPassword(password, salt);
+                if(hashPwd === userPwd){
+                    return {
+                        code: 1,
+                        user: user,
+                        msg : '密码正确'
+                    }
+                }else{
+                    return {
+                        code: 2,
+                        msg:'密码错误'
+                    }
+                }
+            }
+            return {
+                code: 3,
+                msg: '查无此人'
+            }
+        }).catch(async(e)=>{
+            console.log(`系统错误:${e}`);
+            return {
+                code: 4,
+                msg: `系统错误:${e}`
+            }
+        });
+        
+    }
+
+    // jwt验证-step 3：处理jwt签证
+    async certificate(user: any){
+        const payload = {
+            username: user.username,
+            sub: user.id,
+            realName: user.realName,
+            role: user.role
+        }
+        console.log('JWT验证 - Step 3: 处理 jwt 签证');
+        try{
+            const token = this.jwtService.sign(payload);
+            return ApiResult.success(token, '登录成功');
+        }catch(e){
+            return ApiResult.fail(HttpStatus.EXPECTATION_FAILED, '账号或密码错误');
+        }
+        
+    }
 
     /**
      * admin endpoint registration
@@ -21,7 +80,7 @@ export class AuthService {
         if(password !== repassword){
             return ApiResult.fail(400, '两次密码输入不一致！');
         }
-        const user = await this.userService.findUniqueByPhone(accountName);
+        const user = await this.userService.findUniqueByPhone(accountName, true);
         if(user){
             return ApiResult.fail(400, '用户已存在!');
         }
@@ -39,12 +98,6 @@ export class AuthService {
             email: email
         }
         return await this.userService.create(param);
-
-        // await this.userService.create(param).catch(async(e)=>{
-        //     return ApiResult.fail(500, 'created failed: '+e);
-        // }).then(async(o)=>{
-        //     return ApiResult.success(o, 'created successfully');
-        // });
         
     }
 }

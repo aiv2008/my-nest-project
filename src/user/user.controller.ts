@@ -57,7 +57,7 @@ export class UserController  {
     @Get('findbyphone')
     @UseInterceptors(TransformInterceptor)
     async findUniqueByPhone(@Query() query: any ){
-        return await this.userService.findUniqueByPhone(query.phone).then(async(o)=>{
+        return await this.userService.findUniqueByPhone(query.phone, true).then(async(o)=>{
             return ApiResult.success(o, 'success');
         }).catch(async(e)=>{
             console.log('异常:'+e);

@@ -44,11 +44,11 @@ export class UserService {
         });
     }
 
-    async findUniqueByPhone(phone: string): Promise<any | undefined>{
+    async findUniqueByPhone(phone: string, isOmit: boolean): Promise<any | undefined>{
         return await this.prisma.user.findUnique({
             omit: {
-                password: true,
-                salt: true
+                password: isOmit,
+                salt: isOmit
             },
             where : { phone : phone }
         });
