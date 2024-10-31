@@ -23,22 +23,6 @@ export class AuthController {
     @Post('login')
     @UseInterceptors(TransformInterceptor)
     async login(@Body() param: any){
-        console.log('JWT验证 - Step 1: 用户请求登录');
-        // const authResult = this.authService.validateUser(param.username, param.password);
-        return await this.authService.validateUser(param.username, param.password).then(async(authResult)=>{
-            switch(authResult['code']){
-                case 1:
-                    return this.authService.certificate(authResult['user']);
-                case 2:
-                    return ApiResult.fail(HttpStatus.BAD_REQUEST, '账号或密码错误');
-                case 3:
-                    return ApiResult.fail(HttpStatus.BAD_REQUEST, '用户不存在');
-                default:
-                    return ApiResult.fail(HttpStatus.BAD_REQUEST, '系统错误');
-            }
-        }).catch(async(e)=>{
-            return ApiResult.fail(HttpStatus.BAD_REQUEST, `系统错误:${e}`);
-        });
-        
+        return await this.authService.login(param.username, param.password);
     }
 }

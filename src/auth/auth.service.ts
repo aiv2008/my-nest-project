@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { RegisterDto } from './dto/register.dto';
 import { ApiResult } from 'src/common/result';
 import { UserService } from 'src/user/user.service';
@@ -7,11 +7,16 @@ import { Prisma } from '@prisma/client';
 // import { JwtStrategy } from './jwt.strategy';
 import {JwtService} from '@nestjs/jwt'
 import { PrismaService } from 'src/prisma/prisma.service';
+import { RedisClientType } from 'redis';
 
 @Injectable()
 export class AuthService {
 
-    constructor(private readonly userService: UserService, private readonly jwtService: JwtService,private prisma : PrismaService){}
+    constructor(
+        private readonly userService: UserService, 
+        private readonly jwtService: JwtService,private prisma : PrismaService,
+        @Inject('REDIS_CLIENT') private redisClient: RedisClientType
+    ){}
 
     async validateUser(username: string, password: string): Promise<any|null>{
         console.log('Jwt验证 - Step 2：校验用户信息');
@@ -53,7 +58,7 @@ export class AuthService {
     }
 
     // jwt验证-step 3：处理jwt签证
-    async certificate(user: any){
+    certificate(user: any): string{
         const payload = {
             username: user.username,
             sub: user.id,
@@ -61,12 +66,13 @@ export class AuthService {
             role: user.role
         }
         console.log('JWT验证 - Step 3: 处理 jwt 签证');
-        try{
-            const token = this.jwtService.sign(payload);
-            return ApiResult.success(token, '登录成功');
-        }catch(e){
-            return ApiResult.fail(HttpStatus.EXPECTATION_FAILED, '账号或密码错误');
-        }
+        return this.jwtService.sign(payload);
+        // try{
+        //     const token = this.jwtService.sign(payload);
+        //     return ApiResult.success(token, '登录成功');
+        // }catch(e){
+        //     return ApiResult.fail(HttpStatus.EXPECTATION_FAILED, '账号或密码错误');
+        // }
         
     }
 
@@ -98,6 +104,37 @@ export class AuthService {
             email: email
         }
         return await this.userService.create(param);
-        
+    }
+
+    /**
+     * 
+     * @param username 
+     * @param password 
+     * @returns 
+     */
+    async login(username: string, password: string): Promise<any|undefined>{
+        console.log('JWT验证 - Step 1: 用户请求登录');
+        // const authResult = this.authService.validateUser(param.username, param.password);
+        return await this.validateUser(username, password).then(async(authResult)=>{
+            switch(authResult['code']){
+                case 1:
+                    try{
+                        const token = this.certificate(authResult['user']);
+                        // const token = this.jwtService.sign(payload);
+                        this.redisClient.set('token', `Bearer ${token}`);
+                        return ApiResult.success(`Bearer ${token}`, '登录成功');
+                    }catch(e){
+                        return ApiResult.fail(HttpStatus.EXPECTATION_FAILED, '账号或密码错误');
+                    }
+                case 2:
+                    return ApiResult.fail(HttpStatus.BAD_REQUEST, '账号或密码错误');
+                case 3:
+                    return ApiResult.fail(HttpStatus.BAD_REQUEST, '用户不存在');
+                default:
+                    return ApiResult.fail(HttpStatus.BAD_REQUEST, '系统错误');
+            }
+        }).catch(async(e)=>{
+            return ApiResult.fail(HttpStatus.BAD_REQUEST, `系统错误:${e}`);
+        });
     }
 }
