@@ -5,8 +5,10 @@ import { jwtConstants } from 'src/config/constants';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { UserModule } from 'src/user/user.module';
 import { AuthService } from './auth.service';
-import { JwtStrategy } from './jwt.strategy';
 import { createClient } from 'redis';
+import { LocalStrategy } from './strategies/local.strategy';
+import { JwtStrategy } from 'src/auth/strategies/jwt.strategy';
+
 
 @Module({
     imports: [
@@ -17,8 +19,9 @@ import { createClient } from 'redis';
         }),
         UserModule, PrismaModule
     ],
-    providers: [AuthService, JwtStrategy ,
-        {
+    providers: [AuthService
+        // , JwtStrategy ,
+        ,{
             provide: 'REDIS_CLIENT',
             async useFactory() {
                 const client = createClient({
@@ -30,6 +33,10 @@ import { createClient } from 'redis';
                 await client.connect();
                 return client;
             }
+        },
+        {
+            provide: 'local',
+            useClass: LocalStrategy
         }
     ],
     exports: [AuthService]

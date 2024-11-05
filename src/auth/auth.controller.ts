@@ -1,8 +1,11 @@
-import { Body, Controller, HttpStatus, Post, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, HttpStatus, Post, UseInterceptors, UseGuards, Req, Get } from '@nestjs/common';
 import { TransformInterceptor } from 'src/interceptor/transform.interceptor';
 import { RegisterDto } from './dto/register.dto';
 import { AuthService } from './auth.service';
 import { ApiResult } from 'src/common/result';
+import { LocalAuthGuard } from 'src/auth/guards/local-auth.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+// import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
@@ -20,9 +23,31 @@ export class AuthController {
     }
 
     // JWT验证 - Step 1: 用户请求登录
-    @Post('login')
+    // @Post('login')
+    // @UseGuards(LocalAuthGuard)
+    // @UseInterceptors(TransformInterceptor)
+    // // async login(@Body() param: any, @Req() request: Request){
+    // login(  @Req() request: Request){
+    //     console.dir(`request 请求：${JSON.stringify( request['user'])}`)
+    //     // return await this.authService.login(param.username, param.password);
+    //     return request['user'];
+    // }
     @UseInterceptors(TransformInterceptor)
-    async login(@Body() param: any){
-        return await this.authService.login(param.username, param.password);
+    @UseGuards(LocalAuthGuard)
+    @Post('login')
+    async login(@Req() req: Request){
+        const user = req['user'];
+        return  await this.authService.login(user.id, user.username).then(async(o)=>{
+            return ApiResult.success(o,'登录成功');
+        }).catch(async(e)=>{
+            return ApiResult.fail(HttpStatus.BAD_REQUEST, `登录失败：${e}`);
+        });
+    }
+
+    @UseInterceptors(TransformInterceptor)
+    @UseGuards(JwtAuthGuard)
+    @Get('profile')
+    me(@Req() req: Request){
+        return ApiResult.success(req['user'], '获取当前用户成功');
     }
 }
