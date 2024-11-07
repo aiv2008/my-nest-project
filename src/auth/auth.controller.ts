@@ -5,12 +5,18 @@ import { AuthService } from './auth.service';
 import { ApiResult } from 'src/common/result';
 import { LocalAuthGuard } from 'src/auth/guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CaptchaGuard } from './guards/captcha.guard';
 // import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
 
     constructor(private readonly authService: AuthService){}
+
+    @Get('captcha')
+    generateCaptcha(){
+        return this.authService.generateCaptcha();
+    }
 
     @Post('register')
     @UseInterceptors(TransformInterceptor)
@@ -33,6 +39,7 @@ export class AuthController {
     //     return request['user'];
     // }
     @UseInterceptors(TransformInterceptor)
+    @UseGuards(CaptchaGuard)
     @UseGuards(LocalAuthGuard)
     @Post('login')
     async login(@Req() req: Request){

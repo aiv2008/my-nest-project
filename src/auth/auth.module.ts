@@ -15,12 +15,13 @@ import { JwtStrategy } from 'src/auth/strategies/jwt.strategy';
         PassportModule.register({defaultStrategy: 'jwt'}),
         JwtModule.register({
             secret: jwtConstants.secret,
-            signOptions: {expiresIn: '8h'}, //token过期
+            signOptions: {expiresIn: '1h'}, //token过期
         }),
         UserModule, PrismaModule
     ],
     providers: [AuthService
         // , JwtStrategy ,
+        // redis配置
         ,{
             provide: 'REDIS_CLIENT',
             async useFactory() {

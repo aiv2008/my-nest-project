@@ -18,22 +18,23 @@ import { createClient } from 'redis';
     PassportModule.register({defaultStrategy: 'jwt'}),
     JwtModule.register({
         secret: jwtConstants.secret,
-        signOptions: {expiresIn: '8h'}, //token过期
+        signOptions: {expiresIn: '1h'}, //token过期
     }),
   ],
   controllers: [AppController, UserController, AuthController],
-  providers: [AppService, UserService, AuthService,{
-    provide: 'REDIS_CLIENT',
-    async useFactory() {
-        const client = createClient({
-            socket: {
-                host: 'localhost',
-                port: 6379
-            }
-        });
-        await client.connect();
-        return client;
-    }
+  providers: [AppService, UserService, AuthService,
+    {
+        provide: 'REDIS_CLIENT',
+        async useFactory() {
+            const client = createClient({
+                socket: {
+                    host: 'localhost',
+                    port: 6379
+                }
+            });
+            await client.connect();
+            return client;
+        }
 }],
 })
 export class AppModule {}

@@ -7,8 +7,13 @@ import { Prisma } from '@prisma/client';
 import {JwtService} from '@nestjs/jwt'
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RedisClientType } from 'redis';
-import * as _ from 'lodash';
+import * as StringUtil from 'lodash';
 import * as bcrypt from 'bcryptjs';
+import * as svgCaptcha from 'svg-captcha';
+import {v4 as uuid} from 'uuid';
+import { LoginDto } from './dto/login.dto';
+
+
 @Injectable()
 export class AuthService {
 
@@ -17,6 +22,35 @@ export class AuthService {
         private readonly jwtService: JwtService,private prisma : PrismaService,
         @Inject('REDIS_CLIENT') private redisClient: RedisClientType
     ){}
+
+    // @Inject('REDIS_CLIENT')
+    // private redisClient: RedisClientType;
+
+
+    async generateCaptcha(){
+        const captcha = svgCaptcha.create({
+            size: 6,// 验证码长度
+            ignoreChars: '0o1i', // 排除 0o1i
+            noise: 2, // 噪声线条数量
+            color: true, // 验证码的字符有颜色，而不是黑白
+            background: '#cc9966' // 背景颜色
+        });
+        const uniqueId = uuid();
+        const result = await this.redisClient.setEx(uniqueId, 60, captcha.text);
+        const svgData = Buffer.from(captcha.data).toString('base64');
+        const redisResult = await this.redisClient.get(uniqueId);
+        console.log(`${captcha.text}`);
+        console.log(`result = ${result}`);
+        console.log(`redis = ${redisResult}`);
+        if(result === 'OK'){
+            return {
+                data: {
+                    key: uniqueId,
+                    value: svgData
+                }
+            }
+        }
+    }
 
     /**
      * admin endpoint registration
@@ -50,21 +84,24 @@ export class AuthService {
 
     // 验证用户有效性，这个在local策略里用到
     async validateUser(username: string, password: string): Promise<any|null|undefined>{
-        if(_.isEmpty(username) || _.isEmpty(password)){
+        // console.dir(`loginDto: ${JSON.stringify(loginDto) }`)
+        if(StringUtil.isEmpty(username) || StringUtil.isEmpty(password)){
             throw new BadRequestException('user is required');
         }
+        // if(StringUtil.isEmpty(key)){
+        //     throw new BadRequestException('key is required');
+        // }
+        // if(StringUtil.isEmpty(captcha)){
+        //     throw new BadRequestException('captcha is required');
+        // }
+        // const captchaText = await this.redisClient.get(key);
+        // if(captchaText !== captcha){
+        //     throw new BadRequestException('captcha is  not correct');
+        // }
         const user = await this.userService.findUniqueByPhone(username, false);
-        if(_.isEmpty(user)){
+        if(StringUtil.isEmpty(user)){
             throw new BadRequestException('user not found');
         }
-        // console.log(`password=${password}, user.password=${user.password}`);
-        // 制作盐
-        // const salt = makeSalt();
-        // 加密
-        // const hashPwd = encryptPassword(password, salt);
-        // const isValidPwd = await bcrypt.compare(password, user.password);
-        // console.log(`hashPwd=${hashPwd}, user.password=${user.password}`);
-        // if(!isValidPwd){
         if(password !== user.password){
             throw new BadRequestException('password is not valid');
         }
@@ -93,53 +130,5 @@ export class AuthService {
             ...token,
         }
     }
-
-    // /**
-    //  * 
-    //  * @param username 
-    //  * @param password 
-    //  * @returns 
-    //  */
-    // async validateUser(username: string, password: string): Promise<any|undefined>{
-    //     console.log('JWT验证 - Step 1: 用户请求登录');
-    //     // const authResult = this.authService.validateUser(param.username, param.password);
-    //     console.log('Jwt验证 - Step 2：校验用户信息');
-    //     // const user = await this.userService.findUniqueByPhone(username);
-    //     return await this.userService.findUniqueByPhone(username,false).then(async(user)=>{
-    //         console.log(`----序列化user：${JSON.stringify(user)}----`);
-    //         console.log(`${user != null}`);
-    //         if(user != null){
-    //             const salt = user.salt;
-    //             const userPwd = user.password;
-    //             console.log(`----密码等于${userPwd}----`);
-    //             //通过密码盐加密传参，再和数据库的比较，判断是否相等
-    //             const hashPwd = encryptPassword(password, salt);
-    //             if(hashPwd === userPwd){
-    //                 try{
-    //                     // const user = authResult.user;
-    //                     const payload = {
-    //                         username: user.username,
-    //                         sub: user.id,
-    //                         realName: user.realName,
-    //                         role: user.role
-    //                     }
-    //                     console.log('JWT验证 - Step 3: 处理 jwt 签证');
-    //                     const token = this.jwtService.sign(payload);
-    //                     // const token = this.certificate(user);
-    //                     return ApiResult.success(`Bearer ${token}`, '登录成功');
-    //                 }catch(e){
-    //                     return ApiResult.fail( HttpStatus.EXPECTATION_FAILED, '账号或密码错误');
-    //                 }
-    //             }else{
-    //                 return ApiResult.fail(HttpStatus.BAD_REQUEST, '账号或密码错误');
-                    
-    //             }
-    //         }
-    //         return ApiResult.fail(HttpStatus.BAD_REQUEST, '用户不存在');
-    //     }).catch(async(e)=>{
-    //         console.log(`系统错误:${e}`);
-    //         return ApiResult.fail(HttpStatus.BAD_REQUEST, `系统错误:${e}`);
-    //     });
-    // }
 
 }
