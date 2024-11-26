@@ -34,11 +34,11 @@ export class UserService {
         });
     }
 
-    async findUniqueByEmail(email: string): Promise<any|null>{
+    async findUniqueByEmail(email: string, isOmit: boolean): Promise<any|null>{
         return await this.prisma.user.findUnique({
             omit: {
-                password: true,
-                salt: true
+                password: isOmit,
+                salt: isOmit
             },
             where : {email : email}
         });

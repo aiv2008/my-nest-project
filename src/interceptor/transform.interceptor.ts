@@ -25,7 +25,6 @@ export class TransformInterceptor<T> implements NestInterceptor<T, ApiResult<T>>
         context: ExecutionContext,
         next: CallHandler
     ): Observable<ApiResult<T>>{
-        console.log('--进入TransformInterceptor拦截器---');
         // 因为nestjs使用restful api风格，对于post请求默认返回201，所以需要手动处理成200
         const request = context.switchToHttp().getRequest<Request>();
         const response = context.switchToHttp().getResponse<Response>();

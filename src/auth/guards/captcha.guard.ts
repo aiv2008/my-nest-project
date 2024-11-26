@@ -17,7 +17,6 @@ export class CaptchaGuard implements CanActivate{
         const body = request.body;
         const key = body.key;
         const captcha = body.captcha;
-        console.log(`key : ${key}`);
         if(StringUtil.isEmpty(key)){
             throw new BadRequestException('key is required');
         }
@@ -25,8 +24,7 @@ export class CaptchaGuard implements CanActivate{
             throw new BadRequestException('captcha is required');
         }
         const captchaText = await this.redisClient.get(key);
-        console.log(`capture ${captcha}, captcha redis ${captchaText}`);
-        if(captcha !== captchaText){
+        if(captcha.toUpperCase() !== captchaText.toUpperCase()){
             throw new BadRequestException('captcha is not correct');
         }
         return true;

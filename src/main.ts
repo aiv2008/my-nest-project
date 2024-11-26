@@ -1,7 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import {SwaggerModule, DocumentBuilder} from '@nestjs/swagger';
-import { ValidationPipe } from '@nestjs/common';
+import { HttpException, ValidationPipe } from '@nestjs/common';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
 
 
 async function bootstrap() {
@@ -13,6 +14,12 @@ async function bootstrap() {
   const config = new DocumentBuilder().setTitle('Median').setDescription('The Median API description').setVersion('0.1').build();  
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api',app, document);
-  await app.listen(3000);
+  app.enableCors({
+    // origin: '<http://localhost>',
+  });
+
+  //注册全局通用异常过滤器HttpExceptionFilter
+  app.useGlobalFilters(new HttpExceptionFilter());
+  await app.listen(30001);
 }
 bootstrap();

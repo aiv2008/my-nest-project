@@ -40,10 +40,8 @@ export class UserController  {
     async findUniqueById(@Param('id', ParseIntPipe) id : number, @Req() request: Request){
         console.dir(`用户信息: ${JSON.stringify(request['user'])}`);
         return await this.userService.findUniqueById(id).then(async(o)=>{
-            console.log('进入这里-----'+JSON.stringify(o));
             return ApiResult.success(o,'sucess');
         }).catch(async(e)=>{
-            console.log('enter here-----');
             return ApiResult.fail(501, 'query by id failed'+e);
         });
     }
@@ -52,10 +50,9 @@ export class UserController  {
     @UseGuards(JwtAuthGuard)
     @Get('findbyemail')
     async findUniqueByEmail(@Query() query: any){
-        return await this.userService.findUniqueByEmail(query.email).then(async(o)=>{
+        return await this.userService.findUniqueByEmail(query.email,true).then(async(o)=>{
             return ApiResult.success(o, 'success');
         }).catch(async(e)=>{
-            console.log('异常:'+e);
             return ApiResult.fail(501, 'query failed');
         })
     }
@@ -67,7 +64,6 @@ export class UserController  {
         return await this.userService.findUniqueByPhone(query.phone, true).then(async(o)=>{
             return ApiResult.success(o, 'success');
         }).catch(async(e)=>{
-            console.log('异常:'+e);
             return ApiResult.fail(501, 'query failed');
         })
     }

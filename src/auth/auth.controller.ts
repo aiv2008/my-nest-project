@@ -1,4 +1,4 @@
-import { Body, Controller, HttpStatus, Post, UseInterceptors, UseGuards, Req, Get } from '@nestjs/common';
+import { Body, Controller, HttpStatus, Post, UseInterceptors, UseGuards, Req, Get, Res, UseFilters } from '@nestjs/common';
 import { TransformInterceptor } from 'src/interceptor/transform.interceptor';
 import { RegisterDto } from './dto/register.dto';
 import { AuthService } from './auth.service';
@@ -7,15 +7,20 @@ import { LocalAuthGuard } from 'src/auth/guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CaptchaGuard } from './guards/captcha.guard';
 // import { AuthGuard } from '@nestjs/passport';
-
+import { Request } from 'express';
+import { HttpExceptionFilter } from 'src/filters/http-exception.filter';
 @Controller('auth')
+@UseFilters(HttpExceptionFilter)
 export class AuthController {
 
     constructor(private readonly authService: AuthService){}
 
     @Get('captcha')
     generateCaptcha(){
+        // res.type('svg');
         return this.authService.generateCaptcha();
+        // const data = this.authService.generateCaptcha();
+        // return res.send(data['value']);
     }
 
     @Post('register')
