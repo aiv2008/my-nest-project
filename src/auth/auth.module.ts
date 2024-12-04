@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { jwtConstants } from 'src/config/constants';
+import { JwtConstants } from 'src/config/constants';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { UserModule } from 'src/user/user.module';
 import { AuthService } from './auth.service';
@@ -13,10 +13,10 @@ import { JwtStrategy } from 'src/auth/strategies/jwt.strategy';
 @Module({
     imports: [
         PassportModule.register({defaultStrategy: 'jwt'}),
-        JwtModule.register({
-            secret: jwtConstants.secret,
-            signOptions: {expiresIn: '1h'}, //token过期
-        }),
+        // JwtModule.register({
+        //     secret: JwtConstants.SECRET,
+        //     signOptions: {expiresIn: JwtConstants.EXPIRES}, //token过期
+        // }),
         UserModule, PrismaModule
     ],
     providers: [AuthService

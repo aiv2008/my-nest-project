@@ -1,4 +1,4 @@
-import { Body, Controller, HttpStatus, Post, UseInterceptors, UseGuards, Req, Get, Res, UseFilters } from '@nestjs/common';
+import { Body, Controller, HttpStatus, Post, UseInterceptors, UseGuards, Req, Get, Res, UseFilters, BadRequestException } from '@nestjs/common';
 import { TransformInterceptor } from 'src/interceptor/transform.interceptor';
 import { RegisterDto } from './dto/register.dto';
 import { AuthService } from './auth.service';
@@ -17,10 +17,7 @@ export class AuthController {
 
     @Get('captcha')
     generateCaptcha(){
-        // res.type('svg');
         return this.authService.generateCaptcha();
-        // const data = this.authService.generateCaptcha();
-        // return res.send(data['value']);
     }
 
     @Post('register')
@@ -29,20 +26,11 @@ export class AuthController {
         return await this.authService.register(param).then(async(o)=>{
             return ApiResult.success(o, 'created successfully');
         }).catch(async(e)=>{
-            return ApiResult.fail(501, 'created failed'+e);
+            // return ApiResult.fail(501, 'created failed'+e);
+            throw new BadRequestException('注册失败');
         });
     }
 
-    // JWT验证 - Step 1: 用户请求登录
-    // @Post('login')
-    // @UseGuards(LocalAuthGuard)
-    // @UseInterceptors(TransformInterceptor)
-    // // async login(@Body() param: any, @Req() request: Request){
-    // login(  @Req() request: Request){
-    //     console.dir(`request 请求：${JSON.stringify( request['user'])}`)
-    //     // return await this.authService.login(param.username, param.password);
-    //     return request['user'];
-    // }
     @UseInterceptors(TransformInterceptor)
     @UseGuards(CaptchaGuard)
     @UseGuards(LocalAuthGuard)
@@ -52,7 +40,8 @@ export class AuthController {
         return  await this.authService.login(user.id, user.username).then(async(o)=>{
             return ApiResult.success(o,'登录成功');
         }).catch(async(e)=>{
-            return ApiResult.fail(HttpStatus.BAD_REQUEST, `登录失败：${e}`);
+            // return ApiResult.fail(HttpStatus.BAD_REQUEST, `登录失败：${e}`);
+            throw new BadRequestException('登录失败');
         });
     }
 

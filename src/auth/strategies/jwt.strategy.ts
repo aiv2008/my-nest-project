@@ -1,6 +1,6 @@
 import { PassportStrategy } from "@nestjs/passport";
 import {ExtractJwt,Strategy} from 'passport-jwt';
-import {jwtConstants} from '../../config/constants'
+import {JwtConstants} from '../../config/constants'
 import { Injectable } from "@nestjs/common";
 
 // 1. Given a JWT token `XXX`, access */profile* with header `Authorization:Bearer XXX`.
@@ -14,7 +14,7 @@ export class JwtStrategy extends PassportStrategy(Strategy){
             // If `ignoreExpiration` is false, when decoding the JWT token, it will check expiration date.
             ignoreExpiration:false,
             //The `secretOrKey` is used to sign the JWT token or decode token.
-            secretOrKey:jwtConstants.secret
+            secretOrKey:JwtConstants.SECRET
         });
     }
     // JWT验证-step 4：被守卫调用

@@ -4,7 +4,7 @@ import { ApiResult } from 'src/common/result';
 import { UserService } from 'src/user/user.service';
 import { makeSalt,encryptPassword } from 'src/utils/cryptogram';
 import { Prisma } from '@prisma/client';
-import {JwtService} from '@nestjs/jwt'
+// import {JwtService} from '@nestjs/jwt'
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RedisClientType } from 'redis';
 import * as StringUtil from 'lodash';
@@ -12,14 +12,17 @@ import * as svgCaptcha from 'svg-captcha';
 import {v4 as uuid} from 'uuid';
 // import crypto from 'crypto';
 import {createCipheriv,createDecipheriv} from 'crypto';
-import {cryptConstants} from '../config/constants';
+import {cryptConstants, JwtConstants} from '../config/constants';
+// import JWT from "jsonwebtoken";
+import * as JWT from 'jsonwebtoken';
 
 @Injectable()
 export class AuthService {
 
     constructor(
         private readonly userService: UserService, 
-        private readonly jwtService: JwtService,private prisma : PrismaService,
+        // private readonly jwtService: JwtService,
+        private prisma : PrismaService,
         @Inject('REDIS_CLIENT') private redisClient: RedisClientType
     ){}
 
@@ -83,6 +86,28 @@ export class AuthService {
         return await this.userService.create(param);
     }
 
+
+    // verifyAccessToken = (req: Request, _res: Response, next: NextFunction) => {
+    //     if (!req.headers["authorization"]) return next(new createError.Unauthorized());
+    //     const authHeader = req.headers["authorization"];
+    //     const bearerToken = authHeader.split(" ");
+    //     const token = bearerToken[1];
+    //     JWT.verify(token, process.env.ACCESS_TOKEN_SECRET || "RandomToken", async (err, payload) => {
+    //       if (err) {
+    //         const message = err.name === "JsonWebTokenError" ? "Unauthorized" : err.message;
+    //         return next(new createError.Unauthorized(message));
+    //       }
+    //       //@ts-ignore
+    //       const user = await prisma.user.findUnique({ where: { id: payload?.user?.userId } });
+    //       if (user?.access_token !== token) {
+    //         return next(new createError.Unauthorized());
+    //       }
+    //       req.payload = payload;
+    //       next();
+    //     });
+    //   };
+
+
     // 验证用户有效性，这个在local策略里用到
     async validateUser(username: string, password: string): Promise<any|null|undefined>{
         // console.dir(`loginDto: ${JSON.stringify(loginDto) }`)
@@ -121,21 +146,74 @@ export class AuthService {
         }
     }
 
-    async createToken(username: string, id: number){
-        const token = await this.jwtService.sign({username, id});
-        const expires = process.env.expiresTime;
-        return {
-            token,
-            expires
-        }
-    }
+    /**
+     * 新建access_token
+     * @param username 
+     * @param id 
+     * @returns 
+     */
+    // async createToken(username: string, id: number){
+    //     const token = await this.jwtService.sign({username, id});
+    //     const expires = JwtConstants.EXPIRES;
+    //     return {
+    //         token,
+    //         expires
+    //     }
+    // }
+
+
+    createAcessToken = (username: string, id: number)=> new Promise((resolve, reject)=>{
+        const payload = {id, username};
+        const secret = JwtConstants.SECRET;
+        const options = {
+            expiresIn: JwtConstants.EXPIRES,
+            audience: `${id}`,
+        };
+        // if(!JWT) console.error('jwt 为空 ');
+        JWT.sign(payload, secret, options, async(err, token)=>{
+            if(err){
+                reject(new BadRequestException('create asscess_token failed'));
+            }
+            resolve({
+                token,
+                expires: JwtConstants.EXPIRES
+            });
+        });
+    });
+
+
+    /**
+     * 新建refresh_token
+     * @param username 
+     * @param id 
+     */
+    createRefreshToken = (username: string, id: number) =>
+        new Promise((resolve, reject) => {
+          const payload = {id, username};
+        //   const secret = process.env.REFRESH_TOKEN_SECRET || "RandomRefreshToken";
+        const secret = JwtConstants.REFRESH_SECRET;
+          const options = {
+            expiresIn: JwtConstants.REFRESH_EXPIRES,
+            audience: `${id}`,
+          };
+          JWT.sign(payload, secret, options, async (err, token) => {
+            if (err) {
+              reject( new BadRequestException('create refresh_token failed'));
+            }
+            resolve({
+                token,
+                expires: JwtConstants.REFRESH_EXPIRES
+            });
+          });
+        });
 
     // 登录接口服务层
     async login(id: number, username:string){
-        const token = await this.createToken(username, id);
+        // const token = await this.createToken(username, id);
+        const token = await this.createAcessToken(username, id);
         return{
             userInfo:{id, username},
-            ...token,
+            token: token,
         }
     }
 

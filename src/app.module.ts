@@ -10,16 +10,16 @@ import { AuthController } from './auth/auth.controller';
 import { AuthModule } from './auth/auth.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { jwtConstants } from './config/constants';
+import { JwtConstants } from './config/constants';
 import { createClient } from 'redis';
 
 @Module({
   imports: [UserModule, PrismaModule, AuthModule,
     PassportModule.register({defaultStrategy: 'jwt'}),
-    JwtModule.register({
-        secret: jwtConstants.secret,
-        signOptions: {expiresIn: '1h'}, //token过期
-    }),
+    // JwtModule.register({
+    //     secret: JwtConstants.SECRET,
+    //     signOptions: {expiresIn: JwtConstants.EXPIRES}, //token过期
+    // }),
   ],
   controllers: [AppController, UserController, AuthController],
   providers: [AppService, UserService, AuthService,

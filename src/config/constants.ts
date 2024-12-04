@@ -1,5 +1,9 @@
-export const jwtConstants = {
-    secret: 'ansonsnest' //密钥
+export const JwtConstants = {
+    SECRET: 'ansonsnest', //密钥
+    EXPIRES: '1m',
+    // secret: 'ansonsnest', //密钥
+    REFRESH_SECRET: 'ansonsrefresh', //refresh_token
+    REFRESH_EXPIRES: '1d',
 };
 
 export const cryptConstants = {
