@@ -15,6 +15,7 @@ import {createCipheriv,createDecipheriv} from 'crypto';
 import {cryptConstants, JwtConstants} from '../config/constants';
 // import JWT from "jsonwebtoken";
 import * as JWT from 'jsonwebtoken';
+import CryptoJS from 'crypto-js';
 
 @Injectable()
 export class AuthService {
@@ -129,6 +130,8 @@ export class AuthService {
         console.log(`local validate aes 解密前 ${username} ${password} `);
         username = this.desEncrypt(cryptConstants.key, cryptConstants.iv, username);
         password = this.desEncrypt(cryptConstants.key, cryptConstants.iv, password);
+        // username = this.decrypt(cryptConstants.key, cryptConstants.iv, username);
+        // password = this.decrypt(cryptConstants.key, cryptConstants.iv, password); 
         console.log(`local validate aes 解密后 ${username} ${password} `);
 
         const user = await this.userService.findUniqueByEmail(username, false);
@@ -230,11 +233,32 @@ export class AuthService {
     //定义aes解密方法
     desEncrypt(key: string, iv: string, data: string): string{
         //转换解密数据：把需要解密的数据，转化成buffer格式，再转换成二进制
-        const crypted = Buffer.from(data, 'hex').toString('binary');
+        // const crypted = Buffer.from(data, 'hex').toString('binary');
+        // const decipher = createDecipheriv('aes-128-cbc', key, iv);
+        const crypted = data;
         const decipher = createDecipheriv('aes-128-cbc', key, iv);
-        let decrypted = decipher.update(crypted, 'binary', 'utf8');
+        let decrypted = decipher.update(crypted, 'hex', 'utf8');
+        // let decrypted = decipher.update(crypted, 'binary', 'utf8');
         //解密结束
         decrypted += decipher.final('utf8');
+        // decrypted += decipher.final('hex');
         return decrypted;
+    }
+
+    // aes解密
+    decrypt(key: string, iv: string, data: string) {
+        // const encryptedHexStr = CryptoJS.enc.Hex.parse(data);
+        // const srcs = CryptoJS.enc.Base64.stringify(encryptedHexStr);
+        
+        const akey = CryptoJS.enc.Utf8.parse(key);
+        const aiv = CryptoJS.enc.Utf8.parse(iv);
+
+        const decrypt = CryptoJS.AES.decrypt(data, akey, {
+        iv: aiv,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7
+        });
+        const decryptedStr = decrypt.toString(CryptoJS.enc.Utf8);
+        return decryptedStr.toString();
     }
 }
